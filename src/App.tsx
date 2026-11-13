@@ -1,6 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import Dashboard from './pages/Dashboard/Dashboard';
+import Login from './pages/Login/Login';
+import Register from './pages/Register/Register';
 
 function ModulePlaceholder() {
   return (
@@ -14,9 +16,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route element={<MainLayout />}>
           <Route index element={<Dashboard />} />
-          <Route path="login" element={<ModulePlaceholder />} />
           <Route path="movimientos" element={<ModulePlaceholder />} />
           <Route path="movimientos/nuevo" element={<ModulePlaceholder />} />
           <Route path="movimientos/nueva-operacion" element={<ModulePlaceholder />} />
