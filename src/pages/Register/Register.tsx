@@ -3,7 +3,7 @@ import RegisterForm from './Components/RegisterForm';
 import { useRegisterForm } from './hooks/useRegisterForm';
 
 export default function Register() {
-  const { values, updateField, handleSubmit } = useRegisterForm();
+  const { values, errors, isSubmitting, updateField, validateField, handleSubmit } = useRegisterForm();
 
   return (
     <AuthLayout
@@ -15,7 +15,10 @@ export default function Register() {
     >
       <RegisterForm
         values={values}
+        errors={errors}
+        isSubmitting={isSubmitting}
         onFieldChange={updateField}
+        onFieldBlur={validateField}
         onSubmit={handleSubmit}
       />
     </AuthLayout>

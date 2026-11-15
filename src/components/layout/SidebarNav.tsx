@@ -11,7 +11,8 @@ import {
   ChevronsUpDown,
   LogOut,
 } from 'lucide-react';
-import { USER } from '../../data/mockData';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { logout as logoutAction, selectCurrentUser } from '../../store/slices/authSlice';
 
 export const navItems = [
   { to: '/', label: 'Dashboard', short: 'Inicio', icon: LayoutGrid },
@@ -24,11 +25,14 @@ export const navItems = [
 
 export default function SidebarNav() {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectCurrentUser);
   useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const logout = () => {
     setMenuOpen(false);
+    dispatch(logoutAction());
     navigate('/login');
   };
 
@@ -113,7 +117,7 @@ export default function SidebarNav() {
               <User className="h-4 w-4 stroke-[1.5]" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-semibold text-[#202B33]">{USER.name}</p>
+              <p className="truncate text-xs font-semibold text-[#202B33]">{user?.name ?? 'Usuario'}</p>
               <p className="truncate text-[11px] text-[#778089]">Usuario activo</p>
             </div>
             <ChevronsUpDown className="h-4 w-4 text-[#778089] shrink-0" />

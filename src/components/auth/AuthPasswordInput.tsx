@@ -7,9 +7,12 @@ interface AuthPasswordInputProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   placeholder: string;
   toggleAriaLabel: string;
   autoComplete?: string;
+  disabled?: boolean;
+  error?: string;
 }
 
 /** Campo de contraseña con botón para mostrar u ocultar el texto. */
@@ -18,9 +21,12 @@ export default function AuthPasswordInput({
   label,
   value,
   onChange,
+  onBlur,
   placeholder,
   toggleAriaLabel,
   autoComplete,
+  disabled = false,
+  error,
 }: AuthPasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -31,8 +37,12 @@ export default function AuthPasswordInput({
       type={showPassword ? 'text' : 'password'}
       value={value}
       onChange={onChange}
+      onBlur={onBlur}
       placeholder={placeholder}
       autoComplete={autoComplete}
+      noSpaces={true}
+      disabled={disabled}
+      error={error}
       rightSlot={
         <button
           type="button"

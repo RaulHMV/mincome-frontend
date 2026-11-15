@@ -1,8 +1,11 @@
+import type { ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
+import { useAppSelector } from './store/hooks';
+import { selectIsAuthenticated } from './store/slices/authSlice';
 
 function ModulePlaceholder() {
   return (
@@ -12,13 +15,37 @@ function ModulePlaceholder() {
   );
 }
 
+function ProtectedRoute() {
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  return isAuthenticated ? <MainLayout /> : <Navigate to="/login" replace />;
+}
+
+function PublicAuthRoute({ children }: { children: ReactNode }) {
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  return isAuthenticated ? <Navigate to="/" replace /> : <>{children}</>;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route element={<MainLayout />}>
+        <Route
+          path="/login"
+          element={
+            <PublicAuthRoute>
+              <Login />
+            </PublicAuthRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PublicAuthRoute>
+              <Register />
+            </PublicAuthRoute>
+          }
+        />
+        <Route element={<ProtectedRoute />}>
           <Route index element={<Dashboard />} />
           <Route path="movimientos" element={<ModulePlaceholder />} />
           <Route path="movimientos/nuevo" element={<ModulePlaceholder />} />
