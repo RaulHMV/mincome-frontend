@@ -1,20 +1,94 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Plus } from 'lucide-react';
+import { ArrowUpRight, Banknote, Calendar, Landmark, Plus, Wallet } from 'lucide-react';
+import { useAppSelector } from '../../store/hooks';
+import {
+  selectCreditSummary,
+  selectGoalsSummary,
+  selectLiquidBalance,
+  selectOctoberExpenses,
+  selectRecentTransactions,
+  selectTotalNetWorth,
+} from '../../store/slices/financeSlice';
 import AdjustLimitsModal from './Components/AdjustLimitsModal';
 import BalanceCards from './Components/BalanceCards';
 import BudgetMonitor from './Components/BudgetMonitor';
 import IncomeExpenseChart from './Components/IncomeExpenseChart';
 import RecentMovements from './Components/RecentMovements';
-import { METRICS, RECENT_TX, data1y, data6m, defaultBudgets } from './Constants/dashboardConstants';
-import { getChartBarsByPeriod } from './functions/dashboardHelpers';
+import { data1y, data6m } from './Constants/dashboardConstants';
+import {
+  formatCurrencyMXN,
+  formatTransactionDate,
+  getCategoryIcon,
+  getChartBarsByPeriod,
+} from './functions/dashboardHelpers';
 import { useDashboardBudgets } from './hooks/useDashboardBudgets';
-import type { ChartPeriod } from './types/dashboard.types';
+import type { ChartPeriod, MetricItem, RecentTransactionItem } from './types/dashboard.types';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [period, setPeriod] = useState<ChartPeriod>('6m');
-  const { budgets, isModalOpen, openModal, closeModal, saveBudgets } = useDashboardBudgets(defaultBudgets);
+
+  const totalNetWorth = useAppSelector(selectTotalNetWorth);
+  const liquidBalance = useAppSelector(selectLiquidBalance);
+  const goalsSummary = useAppSelector(selectGoalsSummary);
+  const octoberExpenses = useAppSelector(selectOctoberExpenses);
+  const creditSummary = useAppSelector(selectCreditSummary);
+  const recentTransactions = useAppSelector(selectRecentTransactions);
+
+  const { budgets, isModalOpen, openModal, closeModal, saveBudgets } = useDashboardBudgets();
+
+  const metrics: MetricItem[] = useMemo(
+    () => [
+      {
+        title: 'Patrimonio Total',
+        value: formatCurrencyMXN(totalNetWorth),
+        subtitle: 'Saldo Libre + Capital en Apartados',
+        icon: Landmark,
+        color: 'text-[#202B33]',
+      },
+      {
+        title: 'Saldo Libre',
+        value: formatCurrencyMXN(liquidBalance),
+        subtitle: 'Efectivo + Débito Nómina',
+        icon: Banknote,
+        color: 'text-emerald-600',
+      },
+      {
+        title: 'Capital en Apartados',
+        value: formatCurrencyMXN(goalsSummary.totalSaved),
+        subtitle: `${goalsSummary.count} metas en progreso`,
+        icon: Wallet,
+        color: 'text-[#315B50]',
+      },
+      {
+        title: 'Gasto del Mes',
+        value: formatCurrencyMXN(octoberExpenses.total),
+        subtitle: `${octoberExpenses.percentage}% de tus ingresos de octubre`,
+        icon: ArrowUpRight,
+        color: 'text-[#202B33]',
+      },
+    ],
+    [totalNetWorth, liquidBalance, goalsSummary, octoberExpenses],
+  );
+
+  const recentItems: RecentTransactionItem[] = useMemo(
+    () =>
+      recentTransactions.map((tx) => {
+        const prefix = tx.type === 'gasto' ? '-' : tx.type === 'ingreso' ? '+' : '';
+        const tone = tx.type === 'gasto' ? 'text-[#202B33]' : 'text-emerald-600';
+        return {
+          id: tx.id,
+          name: tx.concept,
+          category: tx.category,
+          date: formatTransactionDate(tx.date),
+          amount: `${prefix}${formatCurrencyMXN(tx.amount)}`,
+          tone,
+          icon: getCategoryIcon(tx.category),
+        };
+      }),
+    [recentTransactions],
+  );
 
   const chartBars = getChartBarsByPeriod(period, data6m, data1y);
 
@@ -44,16 +118,25 @@ export default function Dashboard() {
       </div>
 
       {/* 2 & 3. Tarjetas métricas y banner de Crédito Utilizado */}
-      <BalanceCards metrics={METRICS} />
+      <BalanceCards
+        metrics={metrics}
+        creditUsed={creditSummary.used}
+        creditLimit={creditSummary.limit}
+      />
 
       {/* 4 & 5. Cuerpo Principal: Tarjetas sincronizadas a h-[320px] */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start mb-4">
-        <IncomeExpenseChart period={period} chartBars={chartBars} onPeriodChange={setPeriod} />
+        <IncomeExpenseChart
+          period={period}
+          chartBars={chartBars}
+          onPeriodChange={setPeriod}
+          totalNetWorth={totalNetWorth}
+        />
         <BudgetMonitor budgets={budgets} onAdjustLimits={openModal} />
       </div>
 
       {/* 6. Parte Inferior: Últimos movimientos */}
-      <RecentMovements transactions={RECENT_TX} />
+      <RecentMovements transactions={recentItems} />
 
       {/* Modal interactivo para ajustar límites */}
       <AdjustLimitsModal

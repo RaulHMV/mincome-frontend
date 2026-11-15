@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react';
 import {
   Landmark,
   Banknote,
@@ -21,6 +22,25 @@ import type {
   MetricItem,
   RecentTransactionItem,
 } from '../types/dashboard.types';
+
+export const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
+  Comida: Utensils,
+  Compras: ShoppingBag,
+  Supermercado: ShoppingCart,
+  Transporte: Car,
+  Servicios: Zap,
+  Educación: GraduationCap,
+  Hogar: Home,
+  Entretenimiento: Film,
+  Salud: HeartPulse,
+  Otro: MoreHorizontal,
+  Otros: MoreHorizontal,
+  Nómina: Landmark,
+  Freelance: Banknote,
+  Reembolso: ArrowUpRight,
+  Ahorro: ShieldCheck,
+  Apartado: ShieldCheck,
+};
 
 export const METRICS: MetricItem[] = [
   { title: 'Patrimonio Total', value: '$14,950.00', subtitle: 'Saldo Libre + Capital en Apartados', icon: Landmark, color: 'text-[#202B33]' },
