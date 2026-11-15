@@ -3,20 +3,17 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Bell, LogOut, User } from 'lucide-react';
 import { navItems } from './SidebarNav';
 import { USER } from '../../data/mockData';
+import { useAppSelector } from '../../store/hooks';
+import { selectPreventiveAlerts } from '../../store/slices/financeSlice';
 
 interface HeaderProps {
   onOpenChat: () => void;
 }
 
-const notifications = [
-  { id: 'n1', tone: 'rose', text: 'Transporte superó su tope mensual (102%).' },
-  { id: 'n2', tone: 'amber', text: 'Comida alcanzó el 84% de su presupuesto.' },
-  { id: 'n3', tone: 'amber', text: 'Pago de tarjeta BBVA Oro vence en 9 días.' },
-];
-
 export default function Header({ onOpenChat }: HeaderProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const alerts = useAppSelector(selectPreventiveAlerts);
   const [open, setOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const current = navItems.find((n) => (n.to === '/' ? pathname === '/' : pathname.startsWith(n.to)));
@@ -57,7 +54,9 @@ export default function Header({ onOpenChat }: HeaderProps) {
             className="h-10 w-10 rounded-lg border border-[#E2E8F0] bg-white hover:bg-[#E8EBED] text-[#778089] flex items-center justify-center transition-colors relative shrink-0 shadow-2xs cursor-pointer"
           >
             <Bell className="w-4 h-4 stroke-[1.75]" />
-            <span className="w-2 h-2 bg-rose-500 rounded-full absolute top-2 right-2 border-2 border-white" />
+            {alerts.length > 0 && (
+              <span className="w-2 h-2 bg-rose-500 rounded-full absolute top-2 right-2 border-2 border-white" />
+            )}
           </button>
           {open && (
             <>
@@ -71,14 +70,20 @@ export default function Header({ onOpenChat }: HeaderProps) {
                 <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Alertas preventivas
                 </p>
-                {notifications.map((n) => (
-                  <div key={n.id} className="flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-[#F2EFE9] transition">
-                    <AlertTriangle
-                      className={`mt-0.5 h-4 w-4 shrink-0 ${n.tone === 'rose' ? 'text-rose-500' : 'text-amber-500'}`}
-                    />
-                    <p className="text-sm text-zinc-700">{n.text}</p>
-                  </div>
-                ))}
+                {alerts.length === 0 ? (
+                  <p className="px-3 py-3 text-xs text-[#778089]">
+                    No hay alertas pendientes.
+                  </p>
+                ) : (
+                  alerts.map((n) => (
+                    <div key={n.id} className="flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-[#F2EFE9] transition">
+                      <AlertTriangle
+                        className={`mt-0.5 h-4 w-4 shrink-0 ${n.severity === 'danger' ? 'text-rose-500' : 'text-amber-500'}`}
+                      />
+                      <p className="text-sm text-zinc-700">{n.message}</p>
+                    </div>
+                  ))
+                )}
               </div>
             </>
           )}

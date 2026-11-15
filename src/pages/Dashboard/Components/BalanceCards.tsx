@@ -1,12 +1,19 @@
 import { Link } from 'react-router-dom';
 import { CreditCard } from 'lucide-react';
+import { formatCurrencyMXN } from '../functions/dashboardHelpers';
 import type { MetricItem } from '../types/dashboard.types';
 
 interface BalanceCardsProps {
   metrics: MetricItem[];
+  creditUsed: number;
+  creditLimit: number;
 }
 
-export default function BalanceCards({ metrics }: BalanceCardsProps) {
+export default function BalanceCards({
+  metrics,
+  creditUsed,
+  creditLimit,
+}: BalanceCardsProps) {
   return (
     <>
       {/* 2. 4 Tarjetas Métricas */}
@@ -41,11 +48,10 @@ export default function BalanceCards({ metrics }: BalanceCardsProps) {
           </div>
         </div>
         <div className="text-right pl-4 shrink-0">
-          <p className="text-lg font-bold font-mono text-[#202B33] tabular-nums">$2,450.00</p>
-          <p className="text-xs text-[#778089] tabular-nums">de $12,000.00 de límite</p>
+          <p className="text-lg font-bold font-mono text-[#202B33] tabular-nums">{formatCurrencyMXN(creditUsed)}</p>
+          <p className="text-xs text-[#778089] tabular-nums">de {formatCurrencyMXN(creditLimit)} de límite</p>
         </div>
       </Link>
     </>
   );
 }
-

@@ -1,15 +1,18 @@
+import { formatCurrencyMXN } from '../functions/dashboardHelpers';
 import type { ChartBarItem, ChartPeriod } from '../types/dashboard.types';
 
 interface IncomeExpenseChartProps {
   period: ChartPeriod;
   chartBars: ChartBarItem[];
   onPeriodChange: (period: ChartPeriod) => void;
+  totalNetWorth?: number;
 }
 
 export default function IncomeExpenseChart({
   period,
   chartBars,
   onPeriodChange,
+  totalNetWorth = 14950,
 }: IncomeExpenseChartProps) {
   return (
     <section className="bg-white border border-[#EBE7E0] rounded-2xl p-4 sm:p-5 shadow-2xs lg:col-span-7 xl:col-span-8 h-[320px] flex flex-col justify-between">
@@ -107,7 +110,7 @@ export default function IncomeExpenseChart({
           <span className="w-2 h-2 rounded-full bg-[#315B50] shrink-0" />
           <span>Patrimonio total en MXN</span>
         </div>
-        <span className="font-semibold text-slate-700 font-mono tabular-nums">Octubre 2026: $14,950.00</span>
+        <span className="font-semibold text-slate-700 font-mono tabular-nums">Octubre 2026: {formatCurrencyMXN(totalNetWorth)}</span>
       </div>
     </section>
   );
