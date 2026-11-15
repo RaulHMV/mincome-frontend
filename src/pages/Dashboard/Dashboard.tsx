@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Banknote, Calendar, Landmark, Plus, Wallet } from 'lucide-react';
 import { useAppSelector } from '../../store/hooks';
+import { selectUserFirstName } from '../../store/slices/authSlice';
 import {
   selectCreditSummary,
   selectGoalsSummary,
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [period, setPeriod] = useState<ChartPeriod>('6m');
 
+  const firstName = useAppSelector(selectUserFirstName);
   const totalNetWorth = useAppSelector(selectTotalNetWorth);
   const liquidBalance = useAppSelector(selectLiquidBalance);
   const goalsSummary = useAppSelector(selectGoalsSummary);
@@ -98,7 +100,7 @@ export default function Dashboard() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold text-[#202B33] tracking-tight">Tu dinero, en perspectiva</h1>
-          <p className="text-xs sm:text-sm text-[#778089] mt-0.5">Hola, Valeria. Este es tu resumen financiero de hoy.</p>
+          <p className="text-xs sm:text-sm text-[#778089] mt-0.5">Hola, {firstName}. Este es tu resumen financiero de hoy.</p>
         </div>
         <div className="flex items-center justify-between sm:justify-end gap-2.5 w-full sm:w-auto">
           <div className="h-10 px-4 rounded-xl border border-[#E2E8F0] bg-white text-xs font-semibold text-[#535F68] flex items-center gap-2 shadow-2xs select-none">

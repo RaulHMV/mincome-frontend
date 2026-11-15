@@ -12,25 +12,14 @@ function hasMaxTwoDecimals(val: number): boolean {
   return Math.abs(val * 100 - Math.round(val * 100)) < 1e-4;
 }
 
-/* ───────── Auth (preservado para compatibilidad con Login / Register) ───────── */
+/* ───────── Auth (re-exportado desde auth.schema para compatibilidad) ───────── */
 
-export const authSchema = z.object({
-  email: z.string().trim().email('Ingresa un correo electrónico válido'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
-});
-
-export const registerSchema = authSchema
-  .extend({
-    name: z.string().trim().min(2, 'Ingresa tu nombre completo'),
-    confirmPassword: z.string().min(6, 'Confirma tu contraseña'),
-    acceptTerms: z.literal(true, {
-      message: 'Debes aceptar los términos y condiciones',
-    }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Las contraseñas no coinciden',
-    path: ['confirmPassword'],
-  });
+export {
+  loginSchema as authSchema,
+  registerSchema,
+  type LoginSchemaValues as AuthFormValues,
+  type RegisterSchemaValues,
+} from './auth.schema';
 
 /* ───────── Validadores base reutilizables (PostgreSQL mincome-start) ───────── */
 
@@ -162,8 +151,6 @@ export const cardSchema = z
 
 /* ───────── Tipos inferidos ───────── */
 
-export type AuthFormValues = z.infer<typeof authSchema>;
-export type RegisterSchemaValues = z.infer<typeof registerSchema>;
 export type TransactionSchemaValues = z.infer<typeof transactionSchema>;
 export type BudgetLimitUpdateValues = z.infer<typeof budgetLimitUpdateSchema>;
 export type BudgetsBatchValues = z.infer<typeof budgetsBatchSchema>;

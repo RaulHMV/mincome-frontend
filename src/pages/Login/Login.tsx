@@ -3,7 +3,15 @@ import LoginForm from './Components/LoginForm';
 import { useLoginForm } from './hooks/useLoginForm';
 
 export default function Login() {
-  const { values, updateField, handleSubmit } = useLoginForm();
+  const {
+    values,
+    errors,
+    lockRemainingSeconds,
+    recovery,
+    updateField,
+    validateField,
+    handleSubmit,
+  } = useLoginForm();
 
   return (
     <AuthLayout
@@ -15,7 +23,11 @@ export default function Login() {
     >
       <LoginForm
         values={values}
+        errors={errors}
+        lockRemainingSeconds={lockRemainingSeconds}
+        recovery={recovery}
         onFieldChange={updateField}
+        onFieldBlur={validateField}
         onSubmit={handleSubmit}
       />
     </AuthLayout>

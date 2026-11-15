@@ -1,14 +1,20 @@
 import type { ReactNode } from 'react';
 
+const STRIP_WHITESPACE_REGEX = /[\s\u00A0\u200B-\u200D\uFEFF]/g;
+
 interface AuthInputProps {
   id: string;
   label: string;
   type?: 'text' | 'email' | 'password';
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   placeholder: string;
   required?: boolean;
   autoComplete?: string;
+  noSpaces?: boolean;
+  disabled?: boolean;
+  error?: string;
   rightSlot?: ReactNode;
 }
 
@@ -19,23 +25,43 @@ export default function AuthInput({
   type = 'text',
   value,
   onChange,
+  onBlur,
   placeholder,
   required = true,
   autoComplete,
+  noSpaces = false,
+  disabled = false,
+  error,
   rightSlot,
 }: AuthInputProps) {
   const paddingClasses = rightSlot ? 'pl-3.5 pr-10' : 'px-3.5';
+  const borderClasses = error
+    ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500'
+    : 'border-slate-200 focus:border-[#202B33] focus:ring-[#202B33]';
 
   const inputElement = (
     <input
       id={id}
       type={type}
       required={required}
+      disabled={disabled}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onKeyDown={(e) => {
+        if (noSpaces && e.key === ' ') {
+          e.preventDefault();
+        }
+      }}
+      onChange={(e) => {
+        const nextValue = noSpaces
+          ? e.target.value.replace(STRIP_WHITESPACE_REGEX, '')
+          : e.target.value;
+        onChange(nextValue);
+      }}
+      onBlur={onBlur}
       placeholder={placeholder}
       autoComplete={autoComplete}
-      className={`w-full h-11 ${paddingClasses} rounded-xl border border-slate-200 bg-white text-sm text-[#202B33] placeholder:text-slate-400 outline-none focus:border-[#202B33] focus:ring-1 focus:ring-[#202B33] transition-all`}
+      aria-invalid={error ? true : undefined}
+      className={`w-full h-11 ${paddingClasses} rounded-xl border ${borderClasses} bg-white text-sm text-[#202B33] placeholder:text-slate-400 outline-none focus:ring-1 transition-all disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed [&::-ms-reveal]:hidden [&::-ms-clear]:hidden`}
     />
   );
 
@@ -51,6 +77,11 @@ export default function AuthInput({
         </div>
       ) : (
         inputElement
+      )}
+      {error && (
+        <p className="mt-1 text-xs font-medium text-rose-600" role="alert">
+          {error}
+        </p>
       )}
     </div>
   );

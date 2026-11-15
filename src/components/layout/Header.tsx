@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Bell, LogOut, User } from 'lucide-react';
 import { navItems } from './SidebarNav';
-import { USER } from '../../data/mockData';
-import { useAppSelector } from '../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { logout, selectCurrentUser } from '../../store/slices/authSlice';
 import { selectPreventiveAlerts } from '../../store/slices/financeSlice';
 
 interface HeaderProps {
@@ -12,7 +12,9 @@ interface HeaderProps {
 
 export default function Header({ onOpenChat }: HeaderProps) {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const { pathname } = useLocation();
+  const user = useAppSelector(selectCurrentUser);
   const alerts = useAppSelector(selectPreventiveAlerts);
   const [open, setOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -127,13 +129,14 @@ export default function Header({ onOpenChat }: HeaderProps) {
               />
               <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-[#EBE7E0] bg-[#FAF9F6] p-2 shadow-lg z-30">
                 <div className="px-3 py-2 border-b border-[#EBE7E0]/70 mb-1">
-                  <p className="text-xs font-semibold text-[#202B33] truncate">{USER.name}</p>
+                  <p className="text-xs font-semibold text-[#202B33] truncate">{user?.name ?? 'Usuario'}</p>
                   <p className="text-[11px] text-[#778089] truncate">Usuario activo</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => {
                     setUserMenuOpen(false);
+                    dispatch(logout());
                     navigate('/login');
                   }}
                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-rose-600 transition hover:bg-rose-50 cursor-pointer"

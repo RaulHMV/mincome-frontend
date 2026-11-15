@@ -8,8 +8,3 @@ export const INITIAL_REGISTER_VALUES: RegisterFormValues = {
   acceptTerms: false,
 };
 
-export const REGISTER_VALIDATION_MESSAGES = {
-  passwordMismatch: 'Las contraseñas no coinciden.',
-  termsRequired: 'Debes aceptar los términos y condiciones.',
-} as const;
-
