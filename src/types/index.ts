@@ -27,6 +27,13 @@ export interface Budget {
   limit: number;
   budget?: number;
   spent: number;
+  umbralAlerta?: number;
+}
+
+export interface LiquidAccount {
+  id: string;
+  name: string;
+  amount: number;
 }
 
 export type GoalIcon =
