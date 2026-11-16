@@ -4,6 +4,7 @@ import MainLayout from './components/layout/MainLayout';
 import Apartados from './pages/Apartados/Apartados';
 import Calendario from './pages/Calendario/Calendario';
 import Dashboard from './pages/Dashboard/Dashboard';
+import Historial from './pages/Historial/Historial';
 import Login from './pages/Login/Login';
 import Movimientos from './pages/Movimientos/Movimientos';
 import NuevaOperacion from './pages/Movimientos/NuevaOperacion';
@@ -11,14 +12,6 @@ import Register from './pages/Register/Register';
 import Tarjetas from './pages/Tarjetas/Tarjetas';
 import { useAppSelector } from './store/hooks';
 import { selectIsAuthenticated } from './store/slices/authSlice';
-
-function ModulePlaceholder() {
-  return (
-    <div className="flex min-h-[40vh] items-center justify-center rounded-2xl border border-[#EBE7E0] bg-white p-8 shadow-2xs">
-      <p className="text-sm font-medium text-[#778089]">Módulo en integración</p>
-    </div>
-  );
-}
 
 function ProtectedRoute() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
@@ -58,7 +51,7 @@ export default function App() {
           <Route path="apartados" element={<Apartados />} />
           <Route path="tarjetas" element={<Tarjetas />} />
           <Route path="calendario" element={<Calendario />} />
-          <Route path="historial" element={<ModulePlaceholder />} />
+          <Route path="historial" element={<Historial />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
