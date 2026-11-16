@@ -215,6 +215,30 @@ function applyTransactionSideEffects(state: FinanceState, tx: Transaction, direc
   }
 }
 
+function resolveUpdatedCuenta(
+  cards: BankCard[],
+  oldTx: Transaction,
+  updated: Transaction,
+): string | undefined {
+  if (updated.method === 'Efectivo') return 'Efectivo';
+
+  if (
+    oldTx.method === updated.method &&
+    updated.cuenta &&
+    updated.cuenta.trim().length > 0 &&
+    updated.cuenta.toLowerCase() !== 'efectivo'
+  ) {
+    return updated.cuenta.trim();
+  }
+
+  const matchingCard = findMatchingCard(cards, updated.method, updated.cuenta);
+  if (matchingCard) {
+    return `${matchingCard.alias} ••${matchingCard.last4}`;
+  }
+
+  return updated.cuenta?.trim() || updated.method;
+}
+
 const initialState: FinanceState = {
   transactions: initialTransactions,
   cards: initialCards,
@@ -229,11 +253,22 @@ const financeSlice = createSlice({
   initialState,
   reducers: {
     addTransaction: (state, action: PayloadAction<TransactionSchemaValues & { id?: string }>) => {
-      const { id, ...candidate } = action.payload;
+      const { id, ...rest } = action.payload;
       if (id !== undefined && typeof id !== 'string') {
         state.lastError = 'Identificador de movimiento inválido';
         return;
       }
+
+      const candidate: TransactionSchemaValues = {
+        date: rest.date,
+        concept: rest.concept,
+        category: rest.category,
+        type: rest.type,
+        method: rest.method,
+        amount: roundMoney(Math.abs(rest.amount)),
+        recurring: rest.recurring,
+        ...(rest.cuenta !== undefined ? { cuenta: rest.cuenta } : {}),
+      };
 
       const parsed = transactionSchema.safeParse(candidate);
       if (!parsed.success) {
@@ -248,6 +283,49 @@ const financeSlice = createSlice({
 
       state.transactions.unshift(newTx);
       applyTransactionSideEffects(state, newTx, 1);
+      state.lastError = null;
+    },
+
+    updateTransaction: (state, action: PayloadAction<Transaction>) => {
+      const idx = state.transactions.findIndex((tx) => tx.id === action.payload.id);
+      if (idx === -1) {
+        state.lastError = 'No se encontró el movimiento a actualizar';
+        return;
+      }
+
+      const oldTx = state.transactions[idx];
+      const resolvedCuenta = resolveUpdatedCuenta(state.cards, oldTx, action.payload);
+      const candidate: TransactionSchemaValues = {
+        date: action.payload.date,
+        concept: action.payload.concept,
+        category: action.payload.category,
+        type: action.payload.type,
+        method: action.payload.method,
+        amount: roundMoney(Math.abs(action.payload.amount)),
+        recurring: action.payload.recurring,
+        ...(resolvedCuenta !== undefined ? { cuenta: resolvedCuenta } : {}),
+      };
+
+      const parsed = transactionSchema.safeParse(candidate);
+      if (!parsed.success) {
+        state.lastError = parsed.error.issues[0]?.message ?? 'Movimiento financiero inválido';
+        return;
+      }
+
+      applyTransactionSideEffects(state, oldTx, -1);
+
+      const updatedTx: Transaction = {
+        ...oldTx,
+        ...parsed.data,
+        id: oldTx.id,
+        ...(oldTx.concepto !== undefined ? { concepto: parsed.data.concept } : {}),
+        ...(oldTx.categoria !== undefined ? { categoria: parsed.data.category } : {}),
+        ...(oldTx.medio !== undefined ? { medio: parsed.data.method } : {}),
+        ...(oldTx.monto !== undefined ? { monto: parsed.data.amount } : {}),
+      };
+
+      state.transactions[idx] = updatedTx;
+      applyTransactionSideEffects(state, updatedTx, 1);
       state.lastError = null;
     },
 
@@ -293,7 +371,7 @@ const financeSlice = createSlice({
 
       const nameValidation = validateGoalName(state.goals, action.payload.name);
       if (!nameValidation.valid) {
-        state.lastError = nameValidation.error;
+        state.lastError = 'error' in nameValidation ? nameValidation.error : 'Nombre de apartado inválido.';
         return;
       }
 
@@ -357,7 +435,7 @@ const financeSlice = createSlice({
 
       const nameValidation = validateGoalName(state.goals, action.payload.name, targetGoal.id);
       if (!nameValidation.valid) {
-        state.lastError = nameValidation.error;
+        state.lastError = 'error' in nameValidation ? nameValidation.error : 'Nombre de apartado inválido.';
         return;
       }
 
@@ -472,6 +550,7 @@ const financeSlice = createSlice({
 
 export const {
   addTransaction,
+  updateTransaction,
   removeTransaction,
   updateBudgetLimits,
   clearFinanceError,
@@ -494,6 +573,30 @@ const selectTransactionsRaw = (state: RootState) => state.finance.transactions;
 export const selectBudgets = (state: RootState) => state.finance.budgets;
 export const selectFinanceError = (state: RootState) => state.finance.lastError;
 export const selectGoals = createSelector([selectGoalsRaw], (goals) => goals);
+
+export const selectAllTransactions = createSelector(
+  [selectTransactionsRaw],
+  (transactions) => transactions,
+);
+
+export const selectMovimientosTotals = createSelector([selectTransactionsRaw], (transactions) => {
+  let totalIngreso = 0;
+  let totalGasto = 0;
+  let totalAhorro = 0;
+
+  for (const tx of transactions) {
+    const absAmount = Math.abs(tx.amount);
+    if (tx.type === 'ingreso') totalIngreso += absAmount;
+    else if (tx.type === 'gasto') totalGasto += absAmount;
+    else if (tx.type === 'ahorro') totalAhorro += absAmount;
+  }
+
+  return {
+    totalIngreso: roundMoney(totalIngreso),
+    totalGasto: roundMoney(totalGasto),
+    totalAhorro: roundMoney(totalAhorro),
+  };
+});
 
 export const selectLiquidBalance = createSelector([selectLiquidAccountsRaw], (accounts) =>
   roundMoney(accounts.reduce((sum, acc) => sum + acc.amount, 0)),
