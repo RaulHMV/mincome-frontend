@@ -8,6 +8,7 @@ import Login from './pages/Login/Login';
 import Movimientos from './pages/Movimientos/Movimientos';
 import NuevaOperacion from './pages/Movimientos/NuevaOperacion';
 import Register from './pages/Register/Register';
+import Tarjetas from './pages/Tarjetas/Tarjetas';
 import { useAppSelector } from './store/hooks';
 import { selectIsAuthenticated } from './store/slices/authSlice';
 
@@ -55,7 +56,7 @@ export default function App() {
           <Route path="movimientos/nuevo" element={<NuevaOperacion />} />
           <Route path="movimientos/nueva-operacion" element={<NuevaOperacion />} />
           <Route path="apartados" element={<Apartados />} />
-          <Route path="tarjetas" element={<ModulePlaceholder />} />
+          <Route path="tarjetas" element={<Tarjetas />} />
           <Route path="calendario" element={<Calendario />} />
           <Route path="historial" element={<ModulePlaceholder />} />
         </Route>

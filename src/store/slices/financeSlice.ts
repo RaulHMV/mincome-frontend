@@ -10,8 +10,12 @@ import {
 } from '../../data/mockData';
 import {
   budgetsBatchSchema,
+  cardSchema,
+  payCardSchema,
   transactionSchema,
   type BudgetLimitUpdateValues,
+  type CardSchemaValues,
+  type PayCardSchemaValues,
   type TransactionSchemaValues,
 } from '../../schemas/finance.schema';
 import type { BankCard, Budget, Goal, GoalIcon, LiquidAccount, Transaction } from '../../types';
@@ -43,6 +47,11 @@ export interface UpdateGoalPayload {
 export interface GoalTransferPayload {
   goalId: string;
   amount: number;
+}
+
+export interface UpdateCardPayload {
+  id: string;
+  changes: Partial<Omit<BankCard, 'id'>>;
 }
 
 const MAX_GOALS = 10;
@@ -545,6 +554,191 @@ const financeSlice = createSlice({
 
       state.lastError = null;
     },
+
+    addCard: (state, action: PayloadAction<CardSchemaValues>) => {
+      const candidate: CardSchemaValues =
+        action.payload.kind === 'Débito'
+          ? {
+              alias: action.payload.alias,
+              bank: action.payload.bank,
+              last4: action.payload.last4,
+              kind: 'Débito',
+              limit: 0,
+              used: 0,
+              balance: roundMoney(action.payload.balance ?? 0),
+              cutDay: action.payload.cutDay,
+              dueDay: action.payload.dueDay,
+            }
+          : {
+              alias: action.payload.alias,
+              bank: action.payload.bank,
+              last4: action.payload.last4,
+              kind: 'Crédito',
+              limit: roundMoney(action.payload.limit),
+              used: roundMoney(action.payload.used),
+              cutDay: action.payload.cutDay,
+              dueDay: action.payload.dueDay,
+            };
+
+      const parsed = cardSchema.safeParse(candidate);
+      if (!parsed.success) {
+        state.lastError = parsed.error.issues[0]?.message ?? 'Datos de tarjeta inválidos';
+        return;
+      }
+
+      const aliasLower = parsed.data.alias.toLowerCase();
+      const bankLower = parsed.data.bank.toLowerCase();
+
+      if (state.cards.some((c) => c.alias.trim().toLowerCase() === aliasLower)) {
+        state.lastError = 'Ya existe una tarjeta registrada con ese alias.';
+        return;
+      }
+
+      if (
+        state.cards.some(
+          (c) => c.bank.trim().toLowerCase() === bankLower && c.last4 === parsed.data.last4,
+        )
+      ) {
+        state.lastError = 'Ya existe una tarjeta registrada con ese banco y terminación.';
+        return;
+      }
+
+      state.cards.push({
+        id: `card-${Date.now()}`,
+        ...parsed.data,
+      });
+      state.lastError = null;
+    },
+
+    updateCard: (state, action: PayloadAction<UpdateCardPayload>) => {
+      const idx = state.cards.findIndex((c) => c.id === action.payload.id);
+      if (idx === -1) {
+        state.lastError = 'Tarjeta no encontrada.';
+        return;
+      }
+
+      const current = state.cards[idx];
+      const merged = { ...current, ...action.payload.changes };
+      const candidate: CardSchemaValues =
+        merged.kind === 'Débito'
+          ? {
+              alias: merged.alias,
+              bank: merged.bank,
+              last4: merged.last4,
+              kind: 'Débito',
+              limit: 0,
+              used: 0,
+              balance: roundMoney(merged.balance ?? 0),
+              cutDay: merged.cutDay,
+              dueDay: merged.dueDay,
+            }
+          : {
+              alias: merged.alias,
+              bank: merged.bank,
+              last4: merged.last4,
+              kind: 'Crédito',
+              limit: roundMoney(merged.limit),
+              used: roundMoney(merged.used),
+              cutDay: merged.cutDay,
+              dueDay: merged.dueDay,
+            };
+
+      const parsed = cardSchema.safeParse(candidate);
+      if (!parsed.success) {
+        state.lastError = parsed.error.issues[0]?.message ?? 'Datos de tarjeta inválidos';
+        return;
+      }
+
+      const aliasLower = parsed.data.alias.toLowerCase();
+      const bankLower = parsed.data.bank.toLowerCase();
+
+      if (
+        state.cards.some(
+          (c) => c.id !== current.id && c.alias.trim().toLowerCase() === aliasLower,
+        )
+      ) {
+        state.lastError = 'Ya existe otra tarjeta registrada con ese alias.';
+        return;
+      }
+
+      if (
+        state.cards.some(
+          (c) =>
+            c.id !== current.id &&
+            c.bank.trim().toLowerCase() === bankLower &&
+            c.last4 === parsed.data.last4,
+        )
+      ) {
+        state.lastError = 'Ya existe otra tarjeta registrada con ese banco y terminación.';
+        return;
+      }
+
+      state.cards[idx] = {
+        id: current.id,
+        ...parsed.data,
+      };
+      state.lastError = null;
+    },
+
+    removeCard: (state, action: PayloadAction<string>) => {
+      const idx = state.cards.findIndex((c) => c.id === action.payload);
+      if (idx === -1) {
+        state.lastError = 'Tarjeta no encontrada.';
+        return;
+      }
+      state.cards.splice(idx, 1);
+      state.lastError = null;
+    },
+
+    payCreditCard: (state, action: PayloadAction<PayCardSchemaValues>) => {
+      const parsed = payCardSchema.safeParse(action.payload);
+      if (!parsed.success) {
+        state.lastError = parsed.error.issues[0]?.message ?? 'Datos de pago inválidos';
+        return;
+      }
+
+      const { cardId, amount, sourceMethod } = parsed.data;
+      const pago = roundMoney(amount);
+
+      const card = state.cards.find((c) => c.id === cardId);
+      if (!card || card.kind !== 'Crédito') {
+        state.lastError = 'Tarjeta de crédito no encontrada.';
+        return;
+      }
+
+      if (pago > roundMoney(card.used)) {
+        state.lastError = 'El monto excede la deuda actual de la tarjeta.';
+        return;
+      }
+
+      const sourceId = sourceMethod === 'Efectivo' ? 'cash' : 'debit';
+      const sourceAccount = state.liquidAccounts.find((a) => a.id === sourceId);
+      if (!sourceAccount || roundMoney(sourceAccount.amount) < pago) {
+        state.lastError = 'Saldo insuficiente en la cuenta seleccionada';
+        return;
+      }
+
+      sourceAccount.amount = roundMoney(sourceAccount.amount - pago);
+      if (sourceMethod === 'Débito') {
+        syncDebitCardBalance(state, -pago);
+      }
+
+      card.used = roundMoney(Math.max(0, card.used - pago));
+
+      state.transactions.unshift({
+        id: `tx-pay-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        date: TODAY_ISO_DATE,
+        concept: `Pago tarjeta ${card.alias}`,
+        category: 'Otro',
+        type: 'gasto',
+        method: sourceMethod,
+        amount: pago,
+        recurring: false,
+        cuenta: sourceMethod === 'Efectivo' ? 'Efectivo' : 'Débito Nómina',
+      });
+
+      state.lastError = null;
+    },
   },
 });
 
@@ -559,6 +753,10 @@ export const {
   abonarGoal,
   retirarGoal,
   releaseGoal,
+  addCard,
+  updateCard,
+  removeCard,
+  payCreditCard,
 } = financeSlice.actions;
 
 export default financeSlice.reducer;
@@ -571,8 +769,35 @@ const selectCardsRaw = (state: RootState) => state.finance.cards;
 const selectTransactionsRaw = (state: RootState) => state.finance.transactions;
 
 export const selectBudgets = (state: RootState) => state.finance.budgets;
+export const selectCards = (state: RootState) => state.finance.cards;
+export const selectLiquidAccounts = (state: RootState) => state.finance.liquidAccounts;
 export const selectFinanceError = (state: RootState) => state.finance.lastError;
 export const selectGoals = createSelector([selectGoalsRaw], (goals) => goals);
+
+export const selectCardsOverview = createSelector(
+  [selectCardsRaw, selectLiquidAccountsRaw],
+  (cards, liquidAccounts) => {
+    const creditCards = cards.filter((card) => card.kind === 'Crédito');
+    const debitCards = cards.filter((card) => card.kind === 'Débito');
+
+    const creditUsed = roundMoney(creditCards.reduce((sum, card) => sum + card.used, 0));
+    const creditLimit = roundMoney(creditCards.reduce((sum, card) => sum + card.limit, 0));
+    const creditAvailable = roundMoney(Math.max(0, creditLimit - creditUsed));
+    const utilizationPct =
+      creditLimit > 0 ? Math.round((creditUsed / creditLimit) * 100) : 0;
+    const liquidBalance = getLiquidBalance(liquidAccounts);
+
+    return {
+      creditUsed,
+      creditLimit,
+      creditAvailable,
+      utilizationPct,
+      liquidBalance,
+      creditCount: creditCards.length,
+      debitCount: debitCards.length,
+    };
+  },
+);
 
 export const selectAllTransactions = createSelector(
   [selectTransactionsRaw],

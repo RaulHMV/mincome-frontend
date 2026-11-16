@@ -149,6 +149,17 @@ export const cardSchema = z
   })
   .strict();
 
+export const payCardSchema = z
+  .object({
+    cardId: z
+      .string({ message: 'Selecciona una tarjeta' })
+      .trim()
+      .min(1, 'Selecciona una tarjeta'),
+    amount: positiveMoneySchema,
+    sourceMethod: z.enum(['Efectivo', 'Débito']),
+  })
+  .strict();
+
 /* ───────── Tipos inferidos ───────── */
 
 export type TransactionSchemaValues = z.infer<typeof transactionSchema>;
@@ -157,3 +168,4 @@ export type BudgetsBatchValues = z.infer<typeof budgetsBatchSchema>;
 export type GoalSchemaValues = z.infer<typeof goalSchema>;
 export type GoalMovementSchemaValues = z.infer<typeof goalMovementSchema>;
 export type CardSchemaValues = z.infer<typeof cardSchema>;
+export type PayCardSchemaValues = z.infer<typeof payCardSchema>;
