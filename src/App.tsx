@@ -3,6 +3,8 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Login from './pages/Login/Login';
+import Movimientos from './pages/Movimientos/Movimientos';
+import NuevaOperacion from './pages/Movimientos/NuevaOperacion';
 import Register from './pages/Register/Register';
 import { useAppSelector } from './store/hooks';
 import { selectIsAuthenticated } from './store/slices/authSlice';
@@ -47,9 +49,9 @@ export default function App() {
         />
         <Route element={<ProtectedRoute />}>
           <Route index element={<Dashboard />} />
-          <Route path="movimientos" element={<ModulePlaceholder />} />
-          <Route path="movimientos/nuevo" element={<ModulePlaceholder />} />
-          <Route path="movimientos/nueva-operacion" element={<ModulePlaceholder />} />
+          <Route path="movimientos" element={<Movimientos />} />
+          <Route path="movimientos/nuevo" element={<NuevaOperacion />} />
+          <Route path="movimientos/nueva-operacion" element={<NuevaOperacion />} />
           <Route path="apartados" element={<ModulePlaceholder />} />
           <Route path="tarjetas" element={<ModulePlaceholder />} />
           <Route path="calendario" element={<ModulePlaceholder />} />
