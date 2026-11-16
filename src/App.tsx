@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import Apartados from './pages/Apartados/Apartados';
+import Calendario from './pages/Calendario/Calendario';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Login from './pages/Login/Login';
 import Movimientos from './pages/Movimientos/Movimientos';
@@ -55,7 +56,7 @@ export default function App() {
           <Route path="movimientos/nueva-operacion" element={<NuevaOperacion />} />
           <Route path="apartados" element={<Apartados />} />
           <Route path="tarjetas" element={<ModulePlaceholder />} />
-          <Route path="calendario" element={<ModulePlaceholder />} />
+          <Route path="calendario" element={<Calendario />} />
           <Route path="historial" element={<ModulePlaceholder />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
